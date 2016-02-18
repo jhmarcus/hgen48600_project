@@ -1,10 +1,10 @@
-#include <RcppEigen.h>
+#include <RcppArmadillo.h>
 #include <Rcpp.h>
 
-using namespace Eigen;
+using namespace arma;
 using namespace Rcpp;
 
-// [[Rcpp::depends(RcppEigen)]]
+// [[Rcpp::depends(RcppArmadillo)]]
 
 //' Normal approximation to Wright-Fisher with selection transition probability 
 //' @param x_0 ancestral allele frequency
@@ -17,6 +17,9 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 double norm_trans_prob(double x_t, double x_0, int n_gen, double s, double h, int N) {
   double var = x_0 * (1 - x_0); // helper for computing mu and sigma
+  //if (var == 0.0){
+  //  var = .0001;
+  //}
   double mu = x_0 + (2 * s) * var * (x_0 + (h * (1 - (2 * x_0))));
   double sigma = sqrt( var * ((double)n_gen / (2 * N)) ); 
   float eps = .001;
@@ -24,23 +27,39 @@ double norm_trans_prob(double x_t, double x_0, int n_gen, double s, double h, in
   return trans_prob; 
 }
 
+//' Foward algorithim of the HMM using the WF normal approximation transition probabilites
+//' @param O observation matrix first column is the allele_count, the second column is n_chromsomes, 
+//' the third column is the generation
+//' @param states is a vector of the discretized state space in this case discretized allele frequencies
+//' @param n_states size of the states space
+//' @param s the selection coefficent
+//' @param h the dominence parameter
+//' @param N the effective population size
+//' @return a n_states x n_obs matrix F that stores the forward variables 
 // [[Rcpp::export]]
-MatrixXd foward(MatrixXd O, VectorXd states, int n_states, double s, double h, int N) {
+arma::mat foward(arma::mat O, arma::vec states, double s, double h, int N) {
   int i,j,k;
   int allele_count;
   int n_chr;
   int n_gen;
-  VectorXd a(n_states);
+  int n_states = states.size();
+  arma::vec a(n_states);
   double emiss_prob;
 
-  int n_obs = O.rows();
-  MatrixXd F(n_states, n_obs);
+  int n_obs = O.n_rows; 
+  arma::mat F(n_states, n_obs);
+  F.zeros();
+  //F.print("F = ");
   
   // intialization 
   for (i=0; i<n_states; i++){
-    emiss_prob = R::dbinom(O(0, 0), O(0, 1), states[i], 0);
+    allele_count = O(0, 0);
+    n_chr = O(0, 1);
+    emiss_prob = R::dbinom(allele_count, n_chr, states[i], 0);
+    //printf("%e \n", emiss_prob);
     F(i, 0) = (1.0 / n_states) * emiss_prob;
   }
+  //F.print("F = ");
   
   // induction 
   for (i=1; i<n_obs; i++){
@@ -48,42 +67,46 @@ MatrixXd foward(MatrixXd O, VectorXd states, int n_states, double s, double h, i
       allele_count = O(i, 0);
       n_chr = O(i, 1);
       n_gen = O(i, 2) - O(i-1, 2);
+      //printf("%i, %i, %i\n", allele_count, n_chr, n_gen);
       for (k=0; k<n_states; k++){
-        a[k] = norm_trans_prob(states[k], states[j], n_gen, s, h, N);
+        a[k] = norm_trans_prob(states[j], states[k], n_gen, s, h, N);
       }
+      //a.t().print("a = ");
       emiss_prob = R::dbinom(allele_count, n_chr, states[j], 0);
-      F(j, i) = (F.col(i-1).dot(a)) * emiss_prob;
+      F(j, i) = sum(F.col(i-1) % a) * emiss_prob;
     }
   }
+  //F.print("F =");
+  //printf("%e\n", sum(F.col(n_obs-1)));
   return F;
 }
 
-/*
-// [[Rcpp::depends(RcppEigen)]]
 // [[Rcpp::export]]
-VectorXd mcmc(MatrixXd O, VectorXd states, int nStates, double s0, double h, int N, double propSd, int nIter){
-  VectorXd posteriorSamples(nIter);
+//' 
+arma::vec mcmc(arma::mat O, arma::vec states, double s_0, double h, int N, double prop_sd, int n_iter){
+  arma::vec posterior_samples(n_iter);
   int i;
-  double currentS, newS, currentPrior, newPrior, currentLikelihood, newLikelihood, A;
-  int nObs = O.rows();
-  posteriorSamples[0] = s0;
-  for (i=1; i<nIter; i++){
-    currentS = posteriorSamples[i-1];
-    newS = currentS + R::rnorm(0, propSd);
-    currentPrior = R::dunif(currentS, -.3, .3, 0);
+  double current_s, new_s, current_prior, new_prior, current_likelihood, new_likelihood, A;
+  int n_obs = O.n_rows;
+  int n_states = states.size();
+  posterior_samples[0] = s_0;
+  for (i=1; i<n_iter; i++){
+    current_s = posterior_samples[i-1];
+    new_s = current_s + R::rnorm(0, prop_sd);
     
-    currentLikelihood = foward(O, states, nStates, currentS, h, N).col(nObs).sum();
-    newPrior = R::dunif(newS, -.3, .3, 0);
+    current_prior = R::dnorm(current_s, 0, .1, 0);
+    current_likelihood = sum(foward(O, states, current_s, h, N).col(n_obs-1));
     
-    newLikelihood = foward(O, states, nStates, newS, h, N).col(nObs).sum();
-    A = (newPrior * newLikelihood) / (currentPrior * currentLikelihood) ;
+    new_prior = R::dnorm(new_s, 0, .1, 0);
+    new_likelihood = sum(foward(O, states, new_s, h, N).col(n_obs-1));
+    
+    A = (new_prior * new_likelihood) / (current_prior * current_likelihood);
     if (R::runif(0, 1) < A){
-      posteriorSamples[i] = newS;
+      posterior_samples[i] = new_s;
     }
     else {
-      posteriorSamples[i] = currentS;
+      posterior_samples[i] = current_s;
     }
   }
-  return posteriorSamples;
+  return posterior_samples;
 }
-*/
