@@ -6,6 +6,30 @@ using namespace Rcpp;
 
 // [[Rcpp::depends(RcppArmadillo)]]
 
+//' Normal approximation from Lacerda and Seoighe 2014 under weak selection and mutation
+//' @param x_0 ancestral allele frequency
+//' @param x_t current allele frequency 
+//' @param n_gen number of generations between ancestral and current populations
+//' @param s selection coefficent
+//' @param h dominence parameter
+//' @param N effective p
+//' @return probability of transitioning from state x_0 to state x_t
+// [[Rcpp::export]]
+double norm_weak_s_trans_prob(double x_t, double x_0, int n_gen, double s, double h, int N) {
+  double var = x_0 * (1 - x_0);
+  double mu = x_0 / (x_0 + ((1 - x_0) * exp(-s * n_gen)));
+  double sigma2_num_a = var * exp(n_gen * s);
+  double sigma2_num_b = pow(x_0, 2) * exp(2 * n_gen * s);
+  double sigma2_num_c = 1 - (2 * x_0) - (2 * n_gen * s * x_0) * (x_0 - 1);
+  double sigma2_num_d = exp(n_gen * s) - pow(x_0 - 1, 2);
+  double sigma2_denom = N * s * (1 + x_0 * pow(exp(n_gen * s) - 1, 4));
+  double sigma2_num = sigma2_num_a * (sigma2_num_b + (sigma2_num_c * sigma2_num_d));
+  double sigma2 = sigma2_num / sigma2_denom;
+  double eps = .001;
+  double trans_prob = R::pnorm(x_t + eps, mu, sqrt(sigma2), 1, 0) - R::pnorm(x_t - eps, mu, sqrt(sigma2), 1, 0);
+  return trans_prob; 
+}
+
 //' Normal approximation to Wright-Fisher with selection transition probability 
 //' @param x_0 ancestral allele frequency
 //' @param x_t current allele frequency 
@@ -17,9 +41,6 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 double norm_trans_prob(double x_t, double x_0, int n_gen, double s, double h, int N) {
   double var = x_0 * (1 - x_0); // helper for computing mu and sigma
-  //if (var == 0.0){
-  //  var = .0001;
-  //}
   double mu = x_0 + (2 * s) * var * (x_0 + (h * (1 - (2 * x_0))));
   double sigma = sqrt( var * ((double)n_gen / (2 * N)) ); 
   float eps = .001;
@@ -31,7 +52,6 @@ double norm_trans_prob(double x_t, double x_0, int n_gen, double s, double h, in
 //' @param O observation matrix first column is the allele_count, the second column is n_chromsomes, 
 //' the third column is the generation
 //' @param states is a vector of the discretized state space in this case discretized allele frequencies
-//' @param n_states size of the states space
 //' @param s the selection coefficent
 //' @param h the dominence parameter
 //' @param N the effective population size
@@ -69,7 +89,8 @@ arma::mat foward(arma::mat O, arma::vec states, double s, double h, int N) {
       n_gen = O(i, 2) - O(i-1, 2);
       //printf("%i, %i, %i\n", allele_count, n_chr, n_gen);
       for (k=0; k<n_states; k++){
-        a[k] = norm_trans_prob(states[j], states[k], n_gen, s, h, N);
+        //a[k] = norm_trans_prob(states[j], states[k], n_gen, s, h, N);
+        a[k] = norm_weak_s_trans_prob(states[j], states[k], n_gen, s, h, N);
       }
       //a.t().print("a = ");
       emiss_prob = R::dbinom(allele_count, n_chr, states[j], 0);
@@ -81,8 +102,16 @@ arma::mat foward(arma::mat O, arma::vec states, double s, double h, int N) {
   return F;
 }
 
+//' @param O observation matrix first column is the allele_count, the second column is n_chromsomes, 
+//' the third column is the generation
+//' @param states is a vector of the discretized state space in this case discretized allele frequencies
+//' @param s the selection coefficent
+//' @param h the dominence parameter
+//' @param N the effective population size
+//' @param prop_sd standerd deviation of the proposal distribution 
+//' @param n_iter number of iterations of mcmc
+//' @return a vector of samples from the posterior distribution of s
 // [[Rcpp::export]]
-//' 
 arma::vec mcmc(arma::mat O, arma::vec states, double s_0, double h, int N, double prop_sd, int n_iter){
   arma::vec posterior_samples(n_iter);
   int i;

@@ -23,9 +23,9 @@ nStates <- length(states)
 
 
 sourceCpp("src/mcmc.cpp")
-x0 <- .5
-s <- .1
-h <- 1.0
+x0 <- .4
+s <- .02
+h <- .5
 N <- 5000
 n_chrs <- rep(10000, 20)
 gens <- seq(1, 200, 10)
@@ -37,8 +37,8 @@ states <- seq(0.0, 1.0, .05)
 
 s_0 <- 0.0
 prop_sd <- .005
-n_iter <- 50000
+n_iter <- 10000
 
 posterior_samples <- mcmc(O, states, s_0, h, N, prop_sd, n_iter) 
 plot(posterior_samples,type="l")
-hist(posterior_samples[5000:n_iter]/4)
+hist(posterior_samples[5000:n_iter]/8)
