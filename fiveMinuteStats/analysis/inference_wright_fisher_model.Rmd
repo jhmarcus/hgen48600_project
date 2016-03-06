@@ -1,0 +1,100 @@
+---
+title: "Inference Under the Wright-Fisher Model"
+author: "Joe Marcus"
+date: 2016-03-29
+header-includes:
+   - \usepackage{amsmath}
+   - \usepackage{amssymb}
+---
+
+**Last updated:** `r Sys.Date()`
+
+**Code version:** `r system("git log -1 --format='%H'", intern = TRUE)`
+
+```{r chunk-options, include=FALSE}
+source("chunk-options.R")
+```
+
+# Pre-requisites
+
+A basic knowledge of:
+
+* introductory probability
+* genetics terminology  
+* the Wrigher-Fisher Model
+* Hidden Markov Models
+* MCMC
+
+# Overview
+
+Indentfiying regions of the genome that have been under selection is a very exciting and active area of research for current population geneticists. Recent developments in ancient DNA (aDNA) technologies allow for the observation of estimates of allele frequencies through time, the data structure in which the Wright-Fisher process is attempting to model. In the past tutorials we have focused on the most basic version of the Wright-Fisher which is of pure drift alone. Natrual selection is a evolutionary force that effects the probability that a paticular allele will be sampled in the next generation thus effecting both the mean and variance we derived previously. Here I will outline an inference framework for estimating the strength of selection using approximations to the Wright-Fisher model that incoporate selection. Paticularly we will take advantage of that fact that we observe samples from an allele frequency trajectory when we use allele count data from ancient populations sampled multiple time points.
+
+# Definition
+
+## Normal approximation with selection
+
+Let relative fitness $w(.)$ of the three possible genotypes be $w(aa) = 1$, $w(Aa) = 1 + hs$ and $w(AA) = 1 + s$ where $s$ is the selection coefficent and $h$ is the dominence parameter. To incoporate selection into the Wright-Fisher model we can modify our previous defination to:
+
+$$X_{t} \mid X_{t-1} = x_{t-1} \sim Binomial(n = 2N, p = g(y_{t-1}))$$
+
+where the allele frequency $Y_t = \frac{X_t}{2N}$. Assuming $s$ is small and there is no mutation or migration:
+
+$$g(x) = x + sx(1-x)(h + (1 - 2h)x)$$
+
+Because $g(.)$ is a non-linear function of $x$ the expected value of Wright-Fisher model with selection will be non-linear (from the binomial expectation). Thus to make similar approximations via moment-matching we will have to perform a few tricks. Following the previous tutorials we would ultimately like to have an expression for the mean and variance of the Wright Fisher model with selection condtional on a allele frequency in an ancestral population $t-\tau$ generations ago:
+
+$$\mu_t = E(Y_t \mid Y_{\tau})$$
+$$= E(E(Y_t \mid Y_{\tau}) \mid Y_{\tau})$$
+$$= E(g(Y_{t-1}) \mid Y_{\tau})$$
+
+Recall our previous description of the delta method. Here to make the derivations slightly simpler we use a first order taylor series approximation in the delta method:
+
+$$E(Y) \approx g(\mu_x)$$
+$$Var(Y) \approx Var(X)(g'(\mu_x))^2$$
+
+
+ we can write down an approximation for the above expectation:
+
+$$\mu_t \approx \mu_{t-1} + s\mu_{t-1}(1-\mu_{t-1})(h + (1 - 2h)\mu_{t-1})$$
+
+we can likewise solve for a similar approximation of the variance:
+
+$$\sigma^2_t = E(Var(Y_t \mid Y_{t-1}) \mid Y_{\tau}) + Var(E(Y_t \mid Y_{t-1}) \mid Y_{\tau})$$
+
+$$ = E(\frac{1}{2N}g(Y_{t-1})(1 - g(Y_{t-1}) \mid Y_{\tau}) + Var(g(Y_{t-1}) \mid Y_{\tau}) $$
+
+$$\sigma^2_t \approx \frac{1}{2N} (g(\mu_{t-1})(1 - g(\mu_{t-1})) + (1 + s(2 - 3\mu_{t-1})\mu_{t-1})^2 \sigma^2_{t-1} $$
+
+We can then use these moments for the Normal approximation incoporating selection:
+
+$$Y_t \mid Y_{\tau} = y_{\tau} \sim Normal(\mu_t, \sigma^2_t)$$
+
+## Hidden Markov Model
+
+Now we can perform inference on $s$ by using the above approximation to the Wright-Fisher with selection in a hidden markov model (HMM). Let the state space of the HMM be the set of possible allele frequencies, for pratical purposes we discretize the allele frequencey space. We define the sequence of hidden allele frequencey states as $Q$, indexed by time $t$. Observations $O$ are allele counts sampled over time. Emission probabilities are binomial distributed:
+
+$$O_{t} \mid Q_{t} = q_{t} \sim Binomial(2N, q_{t})$$
+
+We use the normal approximation with selection, as defined above, as transition probabilies:
+
+$$Q_{t} \mid Q_{t-1} = q_{t-1} \sim Normal(\mu_t, \sigma^2_t)$$
+
+Thus we have all the machinary required to perform inference on $s$. Because each allele frequnecy trajectory can be noisy due to drift it makes sense to perfrom inference on the full posterior distribution of $s$, which would allow us to account for uncertainity in the parameter inference with summeries of the spread of the posterior distribution such as a $95\%$ credible interval. Here I use Markov Chain Monte Carlo. Specically I use the Metropolis Hastings (MH) algorithim to sample from the posterior distribution of $s$. I place a $Normal(0, .1)$ prior on $s$ and then proceed to:
+
+1. Intialize $s^{(0)}$ 
+2. Propose $s^{(1)} = s^{(0)} + N(0, .005)$
+3. Compute the liklihood of $s^{(1)}$ and $s^{(0)}$ using the foward algorithim of a HMM
+4. Compute the MH ratio $A = \frac{Pr(s^{(1)})Pr(O \mid s^{(1)})}{Pr(s^{(0)})Pr(O \mid s^{(0)})}$
+5. Draw $U \sim Uniform(0, 1)$ 
+6. If $U \leq A$ accept, otherwise reject
+7. Repeat!
+
+# Examples
+
+I implemented the approach in `C++` integrated with R using `Rcpp`. Below are some prelimnary results of the described inference procedure.
+
+## Session information
+
+```{r info}
+sessionInfo()
+```

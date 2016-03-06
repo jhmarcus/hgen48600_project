@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="author" content="Joe Marcus" />
+
+<meta name="date" content="2016-03-29" />
+
+<title>Inference Under the Wright-Fisher Model</title>
+
+<script src="libs/jquery-1.11.0/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="libs/bootstrap-3.3.1/css/united.min.css" rel="stylesheet" />
+<script src="libs/bootstrap-3.3.1/js/bootstrap.min.js"></script>
+<script src="libs/bootstrap-3.3.1/shim/html5shiv.min.js"></script>
+<script src="libs/bootstrap-3.3.1/shim/respond.min.js"></script>
+
+<style type="text/css">
+
+/* padding for bootstrap navbar */
+body {
+  padding-top: 50px;
+  padding-bottom: 40px;
+}
+
+
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h2 {
+  padding-top: 55px;
+  margin-top: -55px;
+}
+.section h3 {
+  padding-top: 55px;
+  margin-top: -55px;
+}
+
+
+
+/* don't use link color in navbar */
+.dropdown-menu>li>a {
+  color: black;
+}
+
+/* some padding for disqus */
+#disqus_thread {
+  margin-top: 45px;
+}
+
+</style>
+
+<link rel="stylesheet" href="libs/font-awesome-4.1.0/css/font-awesome.min.css"/>
+
+<style type="text/css">code{white-space: pre;}</style>
+<link rel="stylesheet"
+      href="libs/highlight/textmate.css"
+      type="text/css" />
+<script src="libs/highlight/highlight.js"></script>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs && document.readyState && document.readyState === "complete") {
+   window.setTimeout(function() {
+      hljs.initHighlighting();
+   }, 0);
+}
+</script>
+
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img { 
+  max-width:100%; 
+  height: auto; 
+}
+</style>
+<div class="container-fluid main-container">
+
+
+<div class="navbar navbar-default navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">fiveMinuteStats</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="license.html">License</a></li>
+        <li><a href="https://github.com/stephens999/fiveMinuteStats">GitHub</a></li>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+<h1 class="title">Inference Under the Wright-Fisher Model</h1>
+<h4 class="author"><em>Joe Marcus</em></h4>
+<h4 class="date"><em>2016-03-29</em></h4>
+</div>
+
+<div id="TOC">
+<ul>
+<li><a href="#pre-requisites">Pre-requisites</a></li>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#definition">Definition</a><ul>
+<li><a href="#normal-approximation-with-selection">Normal approximation with selection</a></li>
+<li><a href="#hidden-markov-model">Hidden Markov Model</a></li>
+</ul></li>
+<li><a href="#examples">Examples</a><ul>
+<li><a href="#session-information">Session information</a></li>
+</ul></li>
+</ul>
+</div>
+
+<p><strong>Last updated:</strong> 2016-03-06</p>
+<p><strong>Code version:</strong> e216d0775b3d2877d521735606d387532de14348</p>
+<div id="pre-requisites" class="section level1">
+<h1>Pre-requisites</h1>
+<p>A basic knowledge of:</p>
+<ul>
+<li>introductory probability</li>
+<li>genetics terminology<br />
+</li>
+<li>the Wrigher-Fisher Model</li>
+<li>Hidden Markov Models</li>
+<li>MCMC</li>
+</ul>
+</div>
+<div id="overview" class="section level1">
+<h1>Overview</h1>
+<p>Indentfiying regions of the genome that have been under selection is a very exciting and active area of research for current population geneticists. Recent developments in ancient DNA (aDNA) technologies allow for the observation of estimates of allele frequencies through time, the data structure in which the Wright-Fisher process is attempting to model. In the past tutorials we have focused on the most basic version of the Wright-Fisher which is of pure drift alone. Natrual selection is a evolutionary force that effects the probability that a paticular allele will be sampled in the next generation thus effecting both the mean and variance we derived previously. Here I will outline an inference framework for estimating the strength of selection using approximations to the Wright-Fisher model that incoporate selection. Paticularly we will take advantage of that fact that we observe samples from an allele frequency trajectory when we use allele count data from ancient populations sampled multiple time points.</p>
+</div>
+<div id="definition" class="section level1">
+<h1>Definition</h1>
+<div id="normal-approximation-with-selection" class="section level2">
+<h2>Normal approximation with selection</h2>
+<p>Let relative fitness <span class="math inline">\(w(.)\)</span> of the three possible genotypes be <span class="math inline">\(w(aa) = 1\)</span>, <span class="math inline">\(w(Aa) = 1 + hs\)</span> and <span class="math inline">\(w(AA) = 1 + s\)</span> where <span class="math inline">\(s\)</span> is the selection coefficent and <span class="math inline">\(h\)</span> is the dominence parameter. To incoporate selection into the Wright-Fisher model we can modify our previous defination to:</p>
+<p><span class="math display">\[X_{t} \mid X_{t-1} = x_{t-1} \sim Binomial(n = 2N, p = g(y_{t-1}))\]</span></p>
+<p>where the allele frequency <span class="math inline">\(Y_t = \frac{X_t}{2N}\)</span>. Assuming <span class="math inline">\(s\)</span> is small and there is no mutation or migration:</p>
+<p><span class="math display">\[g(x) = x + sx(1-x)(h + (1 - 2h)x)\]</span></p>
+<p>Because <span class="math inline">\(g(.)\)</span> is a non-linear function of <span class="math inline">\(x\)</span> the expected value of Wright-Fisher model with selection will be non-linear (from the binomial expectation). Thus to make similar approximations via moment-matching we will have to perform a few tricks. Following the previous tutorials we would ultimately like to have an expression for the mean and variance of the Wright Fisher model with selection condtional on a allele frequency in an ancestral population <span class="math inline">\(t-\tau\)</span> generations ago:</p>
+<p><span class="math display">\[\mu_t = E(Y_t \mid Y_{\tau})\]</span> <span class="math display">\[= E(E(Y_t \mid Y_{\tau}) \mid Y_{\tau})\]</span> <span class="math display">\[= E(g(Y_{t-1}) \mid Y_{\tau})\]</span></p>
+<p>Recall our previous description of the delta method. Here to make the derivations slightly simpler we use a first order taylor series approximation in the delta method:</p>
+<p><span class="math display">\[E(Y) \approx g(\mu_x)\]</span> <span class="math display">\[Var(Y) \approx Var(X)(g&#39;(\mu_x))^2\]</span></p>
+<p>we can write down an approximation for the above expectation:</p>
+<p><span class="math display">\[\mu_t \approx \mu_{t-1} + s\mu_{t-1}(1-\mu_{t-1})(h + (1 - 2h)\mu_{t-1})\]</span></p>
+<p>we can likewise solve for a similar approximation of the variance:</p>
+<p><span class="math display">\[\sigma^2_t = E(Var(Y_t \mid Y_{t-1}) \mid Y_{\tau}) + Var(E(Y_t \mid Y_{t-1}) \mid Y_{\tau})\]</span></p>
+<p><span class="math display">\[ = E(\frac{1}{2N}g(Y_{t-1})(1 - g(Y_{t-1}) \mid Y_{\tau}) + Var(g(Y_{t-1}) \mid Y_{\tau}) \]</span></p>
+<p><span class="math display">\[\sigma^2_t \approx \frac{1}{2N} (g(\mu_{t-1})(1 - g(\mu_{t-1})) + (1 + s(2 - 3\mu_{t-1})\mu_{t-1})^2 \sigma^2_{t-1} \]</span></p>
+<p>We can then use these moments for the Normal approximation incoporating selection:</p>
+<p><span class="math display">\[Y_t \mid Y_{\tau} = y_{\tau} \sim Normal(\mu_t, \sigma^2_t)\]</span></p>
+</div>
+<div id="hidden-markov-model" class="section level2">
+<h2>Hidden Markov Model</h2>
+<p>Now we can perform inference on <span class="math inline">\(s\)</span> by using the above approximation to the Wright-Fisher with selection in a hidden markov model (HMM). Let the state space of the HMM be the set of possible allele frequencies, for pratical purposes we discretize the allele frequencey space. We define the sequence of hidden allele frequencey states as <span class="math inline">\(Q\)</span>, indexed by time <span class="math inline">\(t\)</span>. Observations <span class="math inline">\(O\)</span> are allele counts sampled over time. Emission probabilities are binomial distributed:</p>
+<p><span class="math display">\[O_{t} \mid Q_{t} = q_{t} \sim Binomial(2N, q_{t})\]</span></p>
+<p>We use the normal approximation with selection, as defined above, as transition probabilies:</p>
+<p><span class="math display">\[Q_{t} \mid Q_{t-1} = q_{t-1} \sim Normal(\mu_t, \sigma^2_t)\]</span></p>
+<p>Thus we have all the machinary required to perform inference on <span class="math inline">\(s\)</span>. Because each allele frequnecy trajectory can be noisy due to drift it makes sense to perfrom inference on the full posterior distribution of <span class="math inline">\(s\)</span>, which would allow us to account for uncertainity in the parameter inference with summeries of the spread of the posterior distribution such as a <span class="math inline">\(95\%\)</span> credible interval. Here I use Markov Chain Monte Carlo. Specically I use the Metropolis Hastings (MH) algorithim to sample from the posterior distribution of <span class="math inline">\(s\)</span>. I place a <span class="math inline">\(Normal(0, .1)\)</span> prior on <span class="math inline">\(s\)</span> and then proceed to:</p>
+<ol style="list-style-type: decimal">
+<li>Intialize <span class="math inline">\(s^{(0)}\)</span></li>
+<li>Propose <span class="math inline">\(s^{(1)} = s^{(0)} + N(0, .005)\)</span></li>
+<li>Compute the liklihood of <span class="math inline">\(s^{(1)}\)</span> and <span class="math inline">\(s^{(0)}\)</span> using the foward algorithim of a HMM</li>
+<li>Compute the MH ratio <span class="math inline">\(A = \frac{Pr(s^{(1)})Pr(O \mid s^{(1)})}{Pr(s^{(0)})Pr(O \mid s^{(0)})}\)</span></li>
+<li>Draw <span class="math inline">\(U \sim Uniform(0, 1)\)</span></li>
+<li>If <span class="math inline">\(U \leq A\)</span> accept, otherwise reject</li>
+<li>Repeat!</li>
+</ol>
+</div>
+</div>
+<div id="examples" class="section level1">
+<h1>Examples</h1>
+<p>I implemented the approach in <code>C++</code> integrated with R using <code>Rcpp</code>. Below are some prelimnary results of the described inference procedure.</p>
+<div id="session-information" class="section level2">
+<h2>Session information</h2>
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 3.2.3 (2015-12-10)
+Platform: x86_64-apple-darwin15.2.0 (64-bit)
+Running under: OS X 10.11 (El Capitan)
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] knitr_1.12.3
+
+loaded via a namespace (and not attached):
+ [1] magrittr_1.5    formatR_1.2.1   tools_3.2.3     htmltools_0.3  
+ [5] yaml_2.1.13     stringi_1.0-1   rmarkdown_0.9.2 stringr_1.0.0  
+ [9] digest_0.6.9    evaluate_0.8   </code></pre>
+</div>
+</div>
+
+
+<!-- some extra javascript for older browsers -->
+<script type="text/javascript" src="libs/polyfill.js"></script>
+
+<script>
+
+// manage active state of menu based on current page
+$(document).ready(function () {
+
+    // active menu
+    href = window.location.pathname
+    href = href.substr(href.lastIndexOf('/') + 1)
+    $('a[href="' + href + '"]').parent().addClass('active');
+
+    // manage active menu header
+    if (href.startsWith('authoring_'))
+      $('a[href="' + 'authoring' + '"]').parent().addClass('active');
+    else if (href.endsWith('_format.html'))
+      $('a[href="' + 'formats' + '"]').parent().addClass('active');
+    else if (href.startsWith('developer_'))
+      $('a[href="' + 'developer' + '"]').parent().addClass('active');
+
+});
+
+</script>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

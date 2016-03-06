@@ -6,13 +6,67 @@ using namespace Rcpp;
 
 // [[Rcpp::depends(RcppArmadillo)]]
 
+//' Get Wright-Fisher binomial success probability with selection
+//' @param x frequency in the previous generation
+//' @param s selection coefficent
+//' @param h dominence parameter 
+//' @return g(x)
+// [[Rcpp::export]]
+double g(double x, double s, double h){
+  double a = s * x * (1 - x);
+  double b = h + ((1 - 2 * h) * x);
+  return(x + (a * b));
+}
+
+//' Get first two moments for the normal approximation using the delta method
+//' @param x_0 ancestral allele frequency
+//' @param n_gen number of generations between ancestral and current populations
+//' @param s selection coefficent
+//' @param h dominence parameter
+//' @param N effective population size
+// [[Rcpp::export]]
+arma::vec moments_delta_method(double x_0, int n_gen, double s, double h, int N){
+  int i;
+  double a, b;
+  arma::vec moments(2);
+  double mu = x_0;
+  double sigma2 = (1.0 / (2*N)) * x_0 * (1 - x_0);
+  for (i=0; i<n_gen; i++){
+    a = (1 / ( 2 * N)) * g(mu, s, h) * (1 - g(mu, s, h));
+    b = pow(1 + s * (2 - (3 * mu)) * mu, 2) * sigma2;
+    sigma2 = a + b;
+    mu = g(mu, s, h);
+  }
+  moments[0] = mu;
+  moments[1] = sigma2;
+  return moments;
+}
+
+//' Normal approximation using the delta method approximation to the moments
+//' @param x_0 ancestral allele frequency
+//' @param x_t current allele frequency 
+//' @param n_gen number of generations between ancestral and current populations
+//' @param s selection coefficent
+//' @param h dominence parameter
+//' @param N effective population size
+//' @return probability of transitioning from state x_0 to state x_t
+// [[Rcpp::export]]
+double norm_delta_trans_prob(double x_t, double x_0, int n_gen, double s, double h, int N){
+    arma::vec moments = moments_delta_method(x_0, n_gen, s, h, N);
+    double mu = moments[0];
+    double sigma2 = moments[1];
+    double eps = .0001;
+    double trans_prob = R::pnorm(x_t + eps, mu, sqrt(sigma2), 1, 0) - R::pnorm(x_t - eps, mu, sqrt(sigma2), 1, 0);
+    return trans_prob; 
+}
+
 //' Normal approximation from Lacerda and Seoighe 2014 under weak selection and mutation
 //' @param x_0 ancestral allele frequency
 //' @param x_t current allele frequency 
 //' @param n_gen number of generations between ancestral and current populations
 //' @param s selection coefficent
 //' @param h dominence parameter
-//' @param N effective p
+//' @param N effective population size
 //' @return probability of transitioning from state x_0 to state x_t
 // [[Rcpp::export]]
 double norm_weak_s_trans_prob(double x_t, double x_0, int n_gen, double s, double h, int N) {
@@ -91,7 +145,9 @@ arma::mat foward(arma::mat O, arma::vec states, double s, double h, int N) {
       //printf("%i, %i, %i\n", allele_count, n_chr, n_gen);
       for (k=0; k<n_states; k++){
         //a[k] = norm_trans_prob(states[j], states[k], n_gen, s, h, N);
-        a[k] = norm_weak_s_trans_prob(states[j], states[k], n_gen, s, h, N);
+        //a[k] = norm_weak_s_trans_prob(states[j], states[k], n_gen, s, h, N);
+        a[k] = norm_delta_trans_prob(states[j], states[k], n_gen, s, h, N);
+        
       }
       //a.t().print("a = ");
       emiss_prob = R::dbinom(allele_count, n_chr, states[j], 0);
@@ -136,6 +192,10 @@ arma::vec mcmc(arma::mat O, arma::vec states, double s_0, double h, int N, doubl
     }
     else {
       posterior_samples[i] = current_s;
+    }
+    
+    if (i % 100 == 0){
+      printf("mcmc_iteration: %i \n", i);
     }
   }
   return posterior_samples;
