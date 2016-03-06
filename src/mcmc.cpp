@@ -16,16 +16,17 @@ using namespace Rcpp;
 //' @return probability of transitioning from state x_0 to state x_t
 // [[Rcpp::export]]
 double norm_weak_s_trans_prob(double x_t, double x_0, int n_gen, double s, double h, int N) {
-  double var = x_0 * (1 - x_0);
+  double var = x_0 * (1 - x_0); // helper variable
+  double exp_ns = exp(n_gen * s); // helper variable
   double mu = x_0 / (x_0 + ((1 - x_0) * exp(-s * n_gen)));
-  double sigma2_num_a = var * exp(n_gen * s);
+  double sigma2_num_a = var * exp_ns;
   double sigma2_num_b = pow(x_0, 2) * exp(2 * n_gen * s);
-  double sigma2_num_c = 1 - (2 * x_0) - (2 * n_gen * s * x_0) * (x_0 - 1);
-  double sigma2_num_d = exp(n_gen * s) - pow(x_0 - 1, 2);
-  double sigma2_denom = N * s * (1 + x_0 * pow(exp(n_gen * s) - 1, 4));
-  double sigma2_num = sigma2_num_a * (sigma2_num_b + (sigma2_num_c * sigma2_num_d));
+  double sigma2_num_c = (1 - (2 * x_0) - (2 * n_gen * s * x_0) * (x_0 - 1)) * exp_ns;
+  double sigma2_num_d = pow(x_0 - 1, 2);
+  double sigma2_denom = N * s * pow(1 + x_0 * (exp_ns - 1), 4);
+  double sigma2_num = sigma2_num_a * (sigma2_num_b + (sigma2_num_c - sigma2_num_d));
   double sigma2 = sigma2_num / sigma2_denom;
-  double eps = .001;
+  double eps = .0001;
   double trans_prob = R::pnorm(x_t + eps, mu, sqrt(sigma2), 1, 0) - R::pnorm(x_t - eps, mu, sqrt(sigma2), 1, 0);
   return trans_prob; 
 }
