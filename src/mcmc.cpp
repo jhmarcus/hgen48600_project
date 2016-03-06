@@ -194,9 +194,9 @@ arma::vec mcmc(arma::mat O, arma::vec states, double s_0, double h, int N, doubl
       posterior_samples[i] = current_s;
     }
     
-    if (i % 100 == 0){
-      printf("mcmc_iteration: %i \n", i);
-    }
+    //if (i % 100 == 0){
+      //printf("mcmc_iteration: %i \n", i);
+    //}
   }
   return posterior_samples;
 }

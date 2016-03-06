@@ -139,8 +139,8 @@ img {
 </ul>
 </div>
 
-<p><strong>Last updated:</strong> 2016-03-05</p>
-<p><strong>Code version:</strong> dd407e4dc6ad2a2890312c19618c15b4b4e8a437</p>
+<p><strong>Last updated:</strong> 2016-03-06</p>
+<p><strong>Code version:</strong> 433cadacbff4935c772a07072e257aa430704ec4</p>
 <div id="pre-requisites" class="section level1">
 <h1>Pre-requisites</h1>
 <p>A basic knowledge of:</p>
@@ -153,13 +153,13 @@ img {
 </div>
 <div id="overview" class="section level1">
 <h1>Overview</h1>
-<p>A major goal of population genetics is to understand the effect of various evolutionary forces, such as genetic drift, selection, mutation and migration, on the change in allele frequencies within a population. Named after early pioneers of the theoretical population genetics, Sewall Wright and Ronald A. Fisher, the Wright-Fisher model describes the sampling of alleles in a population with no selection, no mutation, no migration, non-overlapping generation times and random mating. Of course, real populations in nature do not adhere to these assumptions, yet the Wright-Fisher model provides a tool for studying how introducing more complex evolutionary forces can effect a relatively simple model.</p>
+<p>A major goal of population genetics is to understand the effect of various evolutionary forces, such as genetic drift, selection, mutation and migration, on the change in allele frequencies within a population. Named after early pioneers of theoretical population genetics, Sewall Wright and Ronald A. Fisher, the Wright-Fisher model describes the sampling of alleles in a population with no selection, no mutation, no migration, non-overlapping generation times and random mating. Of course, real populations in nature do not adhere to these assumptions, yet the Wright-Fisher model provides a tool for studying how introducing more complex evolutionary forces can effect a relatively simple model.</p>
 </div>
 <div id="definition" class="section level1">
 <h1>Definition</h1>
 <p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(a\)</span> denote two alleles segregating at a locus in a given population. The Wright-Fisher model is a discrete-time Markov chain that describes the evolution of the count of one of these alleles over time. Let <span class="math inline">\(X_t\)</span> be the count of the <span class="math inline">\(A\)</span> allele in a population with <span class="math inline">\(N\)</span> diploid individuals at generation <span class="math inline">\(t\)</span>. The state space of this Markov chain is the set of possible counts of the <span class="math inline">\(A\)</span> allele i.e. <span class="math inline">\(X_t \in \{0, 1, \dots, 2N\}\)</span>. Each generation, a collection of alleles are sampled, with replacement, from the current population at generation <span class="math inline">\(t\)</span> to form a new population at generation <span class="math inline">\(t + 1\)</span>. This process describes the binomial sampling of alleles each generation, which allows us to write the probability transition matrix for the Markov chain as:</p>
 <p><span class="math display">\[P_{ij} = {2N \choose j} (\frac{i}{2N})^{j} (1 - \frac{i}{2N})^{2N - j}\]</span></p>
-<p>In other words the probability of transitioning from an allele count of <span class="math inline">\(i\)</span>, at generation <span class="math inline">\(t-1\)</span>, to an allele count of <span class="math inline">\(j\)</span>, at generation <span class="math inline">\(t\)</span>, is binomially distributed with size <span class="math inline">\(2N\)</span> and success probability being equal to the frequency of the <span class="math inline">\(A\)</span> allele at time <span class="math inline">\(t-1\)</span>:</p>
+<p>In other words the probability of transitioning from an allele count of <span class="math inline">\(i\)</span>, at generation <span class="math inline">\(t-1\)</span>, to an allele count of <span class="math inline">\(j\)</span>, at generation <span class="math inline">\(t\)</span>, can be computed from binomial probability mass function with size <span class="math inline">\(2N\)</span> and success probability being equal to the frequency of the <span class="math inline">\(A\)</span> allele at time <span class="math inline">\(t-1\)</span>:</p>
 <p><span class="math display">\[X_{t} \mid X_{t-1} = x_{t-1} \sim Binomial(n = 2N, p = \frac{x_{t-1}}{2N})\]</span></p>
 <div id="properties" class="section level3">
 <h3>Properties</h3>
@@ -226,7 +226,7 @@ for(i in 0:(2*N)){
 p &lt;- ggplot(P_df, aes(x = i, y = j, fill = p)) +   
      geom_tile() + scale_fill_viridis(option=&quot;D&quot;)
 p</code></pre>
-<p><img src="figure/wright_fisher_model.Rmd/p_matrix-1.png" title="" alt="" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/wright_fisher_model.Rmd/p_matrix-1.png" width="672" style="display: block; margin: auto;" /></p>
 </div>
 <div id="simulating-the-wright-fisher-model" class="section level2">
 <h2>Simulating the Wright-Fisher Model</h2>
@@ -265,7 +265,7 @@ for(N in sizes){
 p &lt;- ggplot(wf_df, aes(x = gen, y = p, group = replicate)) +
      geom_path(alpha = .5) + facet_grid(N ~ p0) + guides(colour=FALSE)
 p</code></pre>
-<p><img src="figure/wright_fisher_model.Rmd/wf_simulation-1.png" title="" alt="" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/wright_fisher_model.Rmd/wf_simulation-1.png" width="672" style="display: block; margin: auto;" /></p>
 <p>The horizontal facet is the starting frequency and the vertical facet is the effective population size. We see that as we increase the population size the less noisy the allele frequency trajectory as expected from our derivation. Additionally we see that probability of fixation or less is more likely when lower and higher starting allele frequencies (again as expected).</p>
 </div>
 <div id="session-information" class="section level2">
@@ -282,14 +282,14 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] viridis_0.3.2 tidyr_0.3.1   dplyr_0.4.3   ggplot2_2.0.0 knitr_1.12.3 
+[1] viridis_0.3.2 tidyr_0.3.1   dplyr_0.4.3   ggplot2_2.0.0 knitr_1.12.18
 
 loaded via a namespace (and not attached):
  [1] Rcpp_0.12.3      magrittr_1.5     munsell_0.4.3    colorspace_1.2-6
  [5] R6_2.1.2         stringr_1.0.0    plyr_1.8.3       tools_3.2.3     
  [9] parallel_3.2.3   grid_3.2.3       gtable_0.1.2     DBI_0.3.1       
 [13] htmltools_0.3    yaml_2.1.13      digest_0.6.9     assertthat_0.1  
-[17] gridExtra_2.0.0  reshape2_1.4.1   formatR_1.2.1    evaluate_0.8    
+[17] gridExtra_2.0.0  reshape2_1.4.1   formatR_1.3      evaluate_0.8.3  
 [21] rmarkdown_0.9.2  labeling_0.3     stringi_1.0-1    scales_0.3.0    </code></pre>
 </div>
 </div>

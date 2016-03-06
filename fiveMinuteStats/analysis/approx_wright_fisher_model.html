@@ -140,8 +140,8 @@ img {
 </ul>
 </div>
 
-<p><strong>Last updated:</strong> 2016-03-05</p>
-<p><strong>Code version:</strong> dd407e4dc6ad2a2890312c19618c15b4b4e8a437</p>
+<p><strong>Last updated:</strong> 2016-03-06</p>
+<p><strong>Code version:</strong> 433cadacbff4935c772a07072e257aa430704ec4</p>
 <div id="pre-requisites" class="section level1">
 <h1>Pre-requisites</h1>
 <p>A basic knowledge of:</p>
@@ -169,7 +169,7 @@ img {
 <p><span class="math display">\[
 Y_t = Y_t \mid Y_{\tau} = Y_{\tau} \sim 
 \begin{cases}
-  Normal(\mu = y_{\tau}, \sigma^2 = y_\tau(1 - y_{\tau}) &amp; 0.0 \leq  y_t \leq 1.0\\
+  TruncatedNormal(\mu = y_{\tau}, \sigma^2 = y_\tau(1 - y_{\tau}) &amp; 0.0 \leq  y_t \leq 1.0\\
   0 &amp; otherwise \\
 \end{cases}
 \]</span></p>
@@ -177,7 +177,7 @@ Y_t = Y_t \mid Y_{\tau} = Y_{\tau} \sim
 <p><span class="math display">\[logit(x) = log(\frac{x}{1-x})\]</span></p>
 <p>If <span class="math inline">\(X\)</span> is a normally distributed random variable and <span class="math inline">\(Y = \frac{1}{1 + e^{-X}}\)</span> then:</p>
 <p><span class="math display">\[Y \sim LogitNormal(\mu_y, \sigma^2_y)\]</span> <span class="math display">\[f_y(y) = \frac{1}{\sigma_y \sqrt{2\pi}} \frac{1}{y(1-y)} exp(-\frac{(logit(y) - \mu_y)^2}{2\sigma^2_y})\]</span></p>
-<p>Unfortunately there is no analytical solution to the mean and variance for this distribution but we can use the univariate delta method to get approximate moments of <span class="math inline">\(Y\)</span> as a function of the first two moments of <span class="math inline">\(X\)</span>. If <span class="math inline">\(Y = g(X)\)</span> and <span class="math inline">\(g(.)\)</span> is some non-linear function then we can approximate the moments of <span class="math inline">\(Y\)</span> using a taylor series expansion which ultimately results in:</p>
+<p>Unfortunately there is no analytical solution for the mean and variance for this distribution but we can use the univariate delta method to get approximate moments of <span class="math inline">\(Y\)</span> as a function of the first two moments of <span class="math inline">\(X\)</span>. If <span class="math inline">\(Y = g(X)\)</span> and <span class="math inline">\(g(.)\)</span> is some non-linear function then we can approximate the moments of <span class="math inline">\(Y\)</span> using a taylor series expansion which ultimately results in:</p>
 <p><span class="math display">\[E(Y) \approx g(\mu_X) + \frac{1}{2}\sigma^2_X g&#39;&#39;(\mu_X)\]</span> <span class="math display">\[Var(Y) \approx Var(X)(g&#39;(\mu_X))^2\]</span></p>
 <p>Specifically we would like to find the mean and variance of <span class="math inline">\(X\)</span> such that when we perform the transformation the mean and variance of <span class="math inline">\(Y\)</span> is matched to the Wright-Fisher model. Let <span class="math inline">\(P^{*}_t\)</span> be the inverse logit transform of <span class="math inline">\(P_t\)</span>. I wont work out the math here but it can be shown that we can match moments of the logit-normal distribution with the delta method using:</p>
 <p><span class="math display">\[Y^{*}_t \mid Y_{\tau} = y_{\tau} \sim LogitNormal(\mu = log(\frac{y_{\tau}}{1-y_{\tau}}),\sigma^2 = c \cdot y_\tau(1 - y_{\tau}) \frac{t - \tau}{2N})\]</span></p>
@@ -192,7 +192,7 @@ Y_t = Y_t \mid Y_{\tau} = Y_{\tau} \sim
 <p>The beta approximation has many useful properties but it is not defined at 0.0 and 1.0. Again these make the approximation poor at the boundaries of the Wright-Fisher distribution of allele frequencies because it cannot model fixation or loss of alleles which can occur with when drift is strong or relatively long time scales.</p>
 <div id="beta-with-spikes" class="section level3">
 <h3>Beta with Spikes</h3>
-<p>A recent publication described a modification of the beta approximation that helps to solve the problem described above. The essential idea of the publication is to use the same beta distribution as above to approximate the distribution of allele frequencies under the Wright-Fisher as well as additionally adding spikes to the boundries of the distribution, allowing for probability mass as both 0.0 and 1.0. This addition of spikes drastically increases the accuracy of the approximation for a pure drift model but also holds promising applications for modeling allele frequency trajectories with selection. See the paper <a href="http://www.genetics.org/content/early/2015/08/26/genetics.115.179606">here</a>.</p>
+<p>A recent publication described a modification of the beta approximation that helps to solve the problem described above. The essential idea of the publication is to use the same beta distribution as above to approximate the distribution of allele frequencies under the Wright-Fisher as well as additionally adding spikes to the boundries of the distribution, allowing for probability mass at both 0.0 and 1.0. This addition of spikes drastically increases the accuracy of the approximation for a pure drift model but also holds promising applications for modeling allele frequency trajectories with selection. See the paper <a href="http://www.genetics.org/content/early/2015/08/26/genetics.115.179606">here</a>.</p>
 </div>
 </div>
 </div>
@@ -220,12 +220,12 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] knitr_1.12.3
+[1] knitr_1.12.18
 
 loaded via a namespace (and not attached):
- [1] magrittr_1.5    formatR_1.2.1   tools_3.2.3     htmltools_0.3  
+ [1] magrittr_1.5    formatR_1.3     tools_3.2.3     htmltools_0.3  
  [5] yaml_2.1.13     stringi_1.0-1   rmarkdown_0.9.2 stringr_1.0.0  
- [9] digest_0.6.9    evaluate_0.8   </code></pre>
+ [9] digest_0.6.9    evaluate_0.8.3 </code></pre>
 </div>
 </div>
 

@@ -5,7 +5,7 @@ source("R/simulation.R")
 sourceCpp("src/mcmc.cpp")
 
 x0 <- .5
-s <- 0.0
+s <- .1
 h <- .5
 N <- 5000
 n_chrs <- rep(10000, 20)

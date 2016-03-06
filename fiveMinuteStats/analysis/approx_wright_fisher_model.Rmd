@@ -44,7 +44,7 @@ where $Y_{\tau}$ is the frequency of the $A$ allele in the ancestral population 
 $$
 Y_t = Y_t \mid Y_{\tau} = Y_{\tau} \sim 
 \begin{cases}
-  Normal(\mu = y_{\tau}, \sigma^2 = y_\tau(1 - y_{\tau}) & 0.0 \leq  y_t \leq 1.0\\
+  TruncatedNormal(\mu = y_{\tau}, \sigma^2 = y_\tau(1 - y_{\tau}) & 0.0 \leq  y_t \leq 1.0\\
   0 & otherwise \\
 \end{cases}
 $$
@@ -58,7 +58,7 @@ If $X$ is a normally distributed random variable and $Y = \frac{1}{1 + e^{-X}}$ 
 $$Y \sim LogitNormal(\mu_y, \sigma^2_y)$$
 $$f_y(y) = \frac{1}{\sigma_y \sqrt{2\pi}} \frac{1}{y(1-y)} exp(-\frac{(logit(y) - \mu_y)^2}{2\sigma^2_y})$$
 
-Unfortunately there is no analytical solution to the mean and variance for this distribution but we can use the univariate delta method to get approximate moments of $Y$ as a function of the first two moments of $X$. If $Y = g(X)$ and $g(.)$ is some non-linear function then we can approximate the moments of $Y$ using a taylor series expansion which ultimately results in:
+Unfortunately there is no analytical solution for the mean and variance for this distribution but we can use the univariate delta method to get approximate moments of $Y$ as a function of the first two moments of $X$. If $Y = g(X)$ and $g(.)$ is some non-linear function then we can approximate the moments of $Y$ using a taylor series expansion which ultimately results in:
 
 $$E(Y) \approx g(\mu_X) + \frac{1}{2}\sigma^2_X g''(\mu_X)$$
 $$Var(Y) \approx Var(X)(g'(\mu_X))^2$$
@@ -84,7 +84,7 @@ The beta approximation has many useful properties but it is not defined at 0.0 a
 
 ### Beta with Spikes
 
-A recent publication described a modification of the beta approximation that helps to solve the problem described above. The essential idea of the publication is to use the same beta distribution as above to approximate the distribution of allele frequencies under the Wright-Fisher as well as additionally adding spikes to the boundries of the distribution, allowing for probability mass as both 0.0 and 1.0. This addition of spikes drastically increases the accuracy of the approximation for a pure drift model but also holds promising applications for modeling allele frequency trajectories with selection. See the paper [here](http://www.genetics.org/content/early/2015/08/26/genetics.115.179606).
+A recent publication described a modification of the beta approximation that helps to solve the problem described above. The essential idea of the publication is to use the same beta distribution as above to approximate the distribution of allele frequencies under the Wright-Fisher as well as additionally adding spikes to the boundries of the distribution, allowing for probability mass at both 0.0 and 1.0. This addition of spikes drastically increases the accuracy of the approximation for a pure drift model but also holds promising applications for modeling allele frequency trajectories with selection. See the paper [here](http://www.genetics.org/content/early/2015/08/26/genetics.115.179606).
 
 # Examples
 

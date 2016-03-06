@@ -8,7 +8,7 @@ title: "Home"
 
 ## About 
 
-The motivation of the this set of `fiveMinuteStats` tutorials is to introduce the and provide pratical examples of performing inference under the Wright-Fisher model. Paticularly, I hope to show some of the steps in taking a well studied model as a foundation to create a new inference tools.
+The motivation of this set of `fiveMinuteStats` tutorials is to introduce the and provide pratical examples of performing inference under the Wright-Fisher model. Paticularly, I hope to show some of the steps in taking a well studied model as a foundation to create a new inference tools.
 
 ## Contents
 
