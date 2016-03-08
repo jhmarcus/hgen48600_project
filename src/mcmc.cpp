@@ -18,6 +18,19 @@ double g(double x, double s, double h){
   return(x + (a * b));
 }
 
+//' Second derivative of g for taylor series approx to moments
+//' @param x frequency in the previous generation
+//' @param s selection coefficent
+//' @param h dominence parameter 
+//' @return g''(x)
+// [[Rcpp::export]]
+double g_2(double x, double s, double h){
+  double a = h * (6 * x - 3);
+  double b = 3 * x + 1;
+  return(2 * s * (a - b));
+}
+
+
 //' Get first two moments for the normal approximation using the delta method
 //' @param x_0 ancestral allele frequency
 //' @param n_gen number of generations between ancestral and current populations
@@ -36,6 +49,7 @@ arma::vec moments_delta_method(double x_0, int n_gen, double s, double h, int N)
     b = pow(1 + s * (2 - (3 * mu)) * mu, 2) * sigma2;
     sigma2 = a + b;
     mu = g(mu, s, h);
+    //mu = g(mu, s, h) + .5 * (1 / ( 2 * N)) * (mu * (1 - mu)) * g_2(mu, s, h);
   }
   moments[0] = mu;
   moments[1] = sigma2;

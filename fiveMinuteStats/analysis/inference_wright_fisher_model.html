@@ -135,13 +135,14 @@ img {
 <li><a href="#examples">Examples</a><ul>
 <li><a href="#neutral">Neutral</a></li>
 <li><a href="#weak-selection">Weak Selection</a></li>
+<li><a href="#future-directions">Future Directions</a></li>
 <li><a href="#session-information">Session information</a></li>
 </ul></li>
 </ul>
 </div>
 
-<p><strong>Last updated:</strong> 2016-03-06</p>
-<p><strong>Code version:</strong> 433cadacbff4935c772a07072e257aa430704ec4</p>
+<p><strong>Last updated:</strong> 2016-03-08</p>
+<p><strong>Code version:</strong> 7b1e9b0984ab5817c9d8e2cf9db389943e2bb4df</p>
 <div id="pre-requisites" class="section level1">
 <h1>Pre-requisites</h1>
 <p>A basic knowledge of:</p>
@@ -149,14 +150,14 @@ img {
 <li>introductory probability</li>
 <li>genetics terminology<br />
 </li>
-<li>the Wrigher-Fisher Model</li>
+<li>the Wright-Fisher Model</li>
 <li>Hidden Markov Models</li>
 <li>MCMC</li>
 </ul>
 </div>
 <div id="overview" class="section level1">
 <h1>Overview</h1>
-<p>Identifying regions of the genome that have been under selection is a very exciting and active area of research for current population geneticists. Recent developments in ancient DNA (aDNA) technologies allow for the observation of estimates of allele frequencies through time, the data structure in which the Wright-Fisher process is attempting to model. In the past tutorials we have focused on the most basic version of the Wright-Fisher which is of pure drift alone. Natural selection is a evolutionary force that effects the probability that a particular allele will be sampled in the next generation thus effecting both the mean and variance we derived previously. Here I will outline an inference framework for estimating the strength of selection using approximations to the Wright-Fisher model that incorporate selection. Particularly we will take advantage of that fact that we observe samples from an allele frequency trajectory when we use allele count data from ancient populations sampled at multiple time points.</p>
+<p>Identifying regions of the genome that have been under selection is a very exciting and active area of research for current population geneticists. Recent developments in ancient DNA (aDNA) technologies allow for the observation of estimates of allele frequencies through time, the data structure in which the Wright-Fisher process is attempting to model. In the past tutorials we have focused on the most basic version of the Wright-Fisher model which is of pure drift alone. Natural selection is a evolutionary force that effects the probability that a particular allele will be sampled in the next generation thus effecting both the mean and variance we derived previously. Here I will outline an inference framework for estimating the strength of selection using approximations to the Wright-Fisher model that incorporate selection. Particularly we will take advantage of that fact that we observe samples from an allele frequency trajectory when we use allele count data from ancient populations sampled at multiple time points.</p>
 </div>
 <div id="definition" class="section level1">
 <h1>Definition</h1>
@@ -166,7 +167,7 @@ img {
 <p><span class="math display">\[X_{t} \mid X_{t-1} = x_{t-1} \sim Binomial(n = 2N, p = g(y_{t-1}))\]</span></p>
 <p>where the allele frequency <span class="math inline">\(Y_t = \frac{X_t}{2N}\)</span>. Assuming <span class="math inline">\(s\)</span> is small and there is no mutation or migration:</p>
 <p><span class="math display">\[g(x) = x + sx(1-x)(h + (1 - 2h)x)\]</span></p>
-<p>Because <span class="math inline">\(g(.)\)</span> is a non-linear function of <span class="math inline">\(x\)</span> the expected value of Wright-Fisher model with selection will be non-linear (from the binomial expectation). Thus to make similar approximations via moment-matching we will have to perform a few tricks. Following the previous tutorials we would ultimately like to have an expression for the mean and variance of the Wright Fisher model with selection conditional on a allele frequency in an ancestral population <span class="math inline">\(t-\tau\)</span> generations ago:</p>
+<p>Because <span class="math inline">\(g(.)\)</span> is a non-linear function of <span class="math inline">\(x\)</span> the expected value of Wright-Fisher model with selection will be non-linear (from the binomial expectation). Thus to make similar approximations via moment-matching we will have to perform a few tricks. Following the previous tutorials we would ultimately like to have an expression for the mean and variance of the Wright Fisher model with selection conditional on a allele frequency in an ancestral population <span class="math inline">\(\tau\)</span> generations ago:</p>
 <p><span class="math display">\[\mu_t = E(Y_t \mid Y_{\tau})\]</span> <span class="math display">\[= E(E(Y_t \mid Y_{\tau}) \mid Y_{\tau})\]</span> <span class="math display">\[= E(g(Y_{t-1}) \mid Y_{\tau})\]</span></p>
 <p>Recall our previous description of the delta method. Here to make the derivations slightly simpler we use a first order taylor series approximation in the delta method:</p>
 <p><span class="math display">\[E(Y) \approx g(\mu_x)\]</span> <span class="math display">\[Var(Y) \approx Var(X)(g&#39;(\mu_x))^2\]</span></p>
@@ -176,12 +177,12 @@ img {
 <p><span class="math display">\[\sigma^2_t = E(Var(Y_t \mid Y_{t-1}) \mid Y_{\tau}) + Var(E(Y_t \mid Y_{t-1}) \mid Y_{\tau})\]</span></p>
 <p><span class="math display">\[ = E(\frac{1}{2N}g(Y_{t-1})(1 - g(Y_{t-1}) \mid Y_{\tau}) + Var(g(Y_{t-1}) \mid Y_{\tau}) \]</span></p>
 <p><span class="math display">\[\sigma^2_t \approx \frac{1}{2N} (g(\mu_{t-1})(1 - g(\mu_{t-1})) + (1 + s(2 - 3\mu_{t-1})\mu_{t-1})^2 \sigma^2_{t-1} \]</span></p>
-<p>We can then use these moments for the Normal approximation incorporating selection:</p>
+<p>We can then use these moments for the normal approximation incorporating selection:</p>
 <p><span class="math display">\[Y_t \mid Y_{\tau} = y_{\tau} \sim Normal(\mu_t, \sigma^2_t)\]</span></p>
 </div>
 <div id="hidden-markov-model" class="section level2">
 <h2>Hidden Markov Model</h2>
-<p>Now we can perform inference on <span class="math inline">\(s\)</span> by using the above approximation to the Wright-Fisher with selection in a Hidden Markov model (HMM). Let the state space of the HMM be the set of possible allele frequencies, for practical purposes we discretize the allele frequency space. We define the sequence of hidden allele frequency states as <span class="math inline">\(Q\)</span>, indexed by time <span class="math inline">\(t\)</span>. Observations <span class="math inline">\(O\)</span> are allele counts sampled over time. Emission probabilities are binomial distributed:</p>
+<p>Now we can perform inference on <span class="math inline">\(s\)</span> by using the above approximation to the Wright-Fisher with selection in a Hidden Markov model (HMM). Let the state space of the HMM be the set of possible allele frequencies, for practical purposes we discretize the allele frequency space. We define the sequence of hidden allele frequency states as <span class="math inline">\(Q\)</span>, indexed by time <span class="math inline">\(t\)</span>. Observations <span class="math inline">\(O\)</span> are allele counts sampled over time. Emission probabilities are binomially distributed:</p>
 <p><span class="math display">\[O_{t} \mid Q_{t} = q_{t} \sim Binomial(2N, q_{t})\]</span></p>
 <p>We use the normal approximation with selection, as defined above, as transition probabilities:</p>
 <p><span class="math display">\[Q_{t} \mid Q_{t-1} = q_{t-1} \sim Normal(\mu_t, \sigma^2_t)\]</span></p>
@@ -199,7 +200,7 @@ img {
 </div>
 <div id="examples" class="section level1">
 <h1>Examples</h1>
-<p>I implemented the approach in <code>C++</code> integrated with R using <code>Rcpp</code>. Here I simulate allele frequencies from the exact Wright-Fisher Model with selection and sample binomial allele counts from the population frequencies to create an observation sequence through time. I then use the MCMC approach described above to draw samples from the posterior distribution of <span class="math inline">\(s\)</span>. Of the course the below simulations only show a few examples, future exploration is absolutely necessary.</p>
+<p>I implemented the above approach in <code>C++</code> integrated with R using <code>Rcpp</code>. Here I simulate allele frequencies from the exact Wright-Fisher Model with selection and sample binomial allele counts from the population frequencies to create an observation sequence through time. I then use the MCMC approach described above to draw samples from the posterior distribution of <span class="math inline">\(s\)</span>. Of the course the below simulations only show a few examples: future exploration is absolutely necessary.</p>
 <div id="neutral" class="section level2">
 <h2>Neutral</h2>
 <p>For a sanity check our inference approach should not infer selection as we are setting <span class="math inline">\(s = 0\)</span> for the simulated data.</p>
@@ -330,7 +331,7 @@ qplot(1:length(posterior_samples), posterior_samples, geom=&quot;line&quot;, xla
 <pre class="r"><code># histogram of posterior, removing burn in
 qplot(posterior_samples[5000:length(posterior_samples)], xlab = &quot;posterior_s&quot;, bins = 40)</code></pre>
 <p><img src="figure/inference_wright_fisher_model.Rmd/weak_selection-2.png" title="" alt="" width="672" style="display: block; margin: auto;" /></p>
-<p>The inferred mean seems to be close to what I simulated. The simulations run under very idealized conditions thus the possible factors that could break my inference procedure are:</p>
+<p>The inferred posterior mean seems to be close to what I simulated. The simulations are run under very idealized conditions thus the possible factors that could break my inference procedure are:</p>
 <ol style="list-style-type: decimal">
 <li>Missing or sparse data i.e. few individuals at each time point</li>
 <li>Large levels of drift that could effect the normal approximation</li>
@@ -338,6 +339,14 @@ qplot(posterior_samples[5000:length(posterior_samples)], xlab = &quot;posterior_
 <li>Many others</li>
 </ol>
 <p>But as a first step towards estimating selection coefficients from time-series data this seems to work reasonably well!</p>
+</div>
+<div id="future-directions" class="section level2">
+<h2>Future Directions</h2>
+<ol style="list-style-type: decimal">
+<li>Use the Beta with spikes approximation as the transition density, as it has been show to be very accurate.</li>
+<li>Explore the effect of sprase data through time and small sample sizes which are both relevant features of ancient DNA data.</li>
+<li>Currently I assume that the effective population size is known and constant through time. It would be realistic to estimate <span class="math inline">\(N\)</span> using the allele frequency trajectories of multiple loci.</li>
+</ol>
 </div>
 <div id="session-information" class="section level2">
 <h2>Session information</h2>

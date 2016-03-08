@@ -139,8 +139,8 @@ img {
 </ul>
 </div>
 
-<p><strong>Last updated:</strong> 2016-03-06</p>
-<p><strong>Code version:</strong> 433cadacbff4935c772a07072e257aa430704ec4</p>
+<p><strong>Last updated:</strong> 2016-03-08</p>
+<p><strong>Code version:</strong> 7b1e9b0984ab5817c9d8e2cf9db389943e2bb4df</p>
 <div id="pre-requisites" class="section level1">
 <h1>Pre-requisites</h1>
 <p>A basic knowledge of:</p>
@@ -266,7 +266,7 @@ p &lt;- ggplot(wf_df, aes(x = gen, y = p, group = replicate)) +
      geom_path(alpha = .5) + facet_grid(N ~ p0) + guides(colour=FALSE)
 p</code></pre>
 <p><img src="figure/wright_fisher_model.Rmd/wf_simulation-1.png" width="672" style="display: block; margin: auto;" /></p>
-<p>The horizontal facet is the starting frequency and the vertical facet is the effective population size. We see that as we increase the population size the less noisy the allele frequency trajectory as expected from our derivation. Additionally we see that probability of fixation or less is more likely when lower and higher starting allele frequencies (again as expected).</p>
+<p>The horizontal facet is the starting frequency and the vertical facet is the effective population size. We see that as we increase the population size the less noisy the allele frequency trajectory as expected from our derivation. Additionally we see that probability of fixation or loss is more likely when lower and higher starting allele frequencies (again as expected).</p>
 </div>
 <div id="session-information" class="section level2">
 <h2>Session information</h2>

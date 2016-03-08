@@ -174,7 +174,7 @@ p <- ggplot(wf_df, aes(x = gen, y = p, group = replicate)) +
 p
 ```
 
-The horizontal facet is the starting frequency and the vertical facet is the effective population size. We see that as we increase the population size the less noisy the allele frequency trajectory as expected from our derivation. Additionally we see that probability of fixation or less is more likely when lower and higher starting allele frequencies (again as expected).
+The horizontal facet is the starting frequency and the vertical facet is the effective population size. We see that as we increase the population size the less noisy the allele frequency trajectory as expected from our derivation. Additionally we see that probability of fixation or loss is more likely when lower and higher starting allele frequencies (again as expected).
 
 ## Session information
 

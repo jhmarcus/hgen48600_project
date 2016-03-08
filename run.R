@@ -4,8 +4,8 @@ library(dplyr)
 source("R/simulation.R")
 sourceCpp("src/mcmc.cpp")
 
-x0 <- .5
-s <- .1
+x0 <- .3
+s <- .01
 h <- .5
 N <- 5000
 n_chrs <- rep(10000, 20)
@@ -19,7 +19,7 @@ states <- seq(0.0, 1.0, .025)
 
 s_0 <- 0.01
 prop_sd <- .005
-n_iter <- 20000
+n_iter <- 10000
 
 posterior_samples <- mcmc(O, states, s_0, h, N, prop_sd, n_iter) 
 plot(posterior_samples,type="l")
